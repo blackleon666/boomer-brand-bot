@@ -1,0 +1,32 @@
+[
+  {
+    "id": "product_001",
+    "name": "Klasik Boomer T-Shirt",
+    "description": "100% pamuklu, unisex kesim,.Boomer logolu",
+    "price_visible": true,
+    "price_value": "299,99",
+    "source": "telegram",
+    "source_post_id": "12345",
+    "source_date": "2026-05-01"
+  },
+  {
+    "id": "product_002",
+    "name": "Boomer Logo Mukavva Fincan",
+    "description": "Şekerkalekali mukavva, 300ml kapasite, mikrodalga ve bulaşık makinesi güvenli",
+    "price_visible": true,
+    "price_value": "149,99",
+    "source": "instagram",
+    "source_post_id": "ig_67890",
+    "source_date": "2026-04-28"
+  },
+  {
+    "id": "product_003",
+    "name": "Kotonlu Eşofman Pantolonu",
+    "description": "Yorgunluk anda dışarı çıkmak istediğinizde aşırı rahat, damat tonu",
+    "price_visible": false,
+    "price_value": null,
+    "source": "telegram",
+    "source_post_id": "12350",
+    "source_date": "2026-05-03"
+  }
+]
