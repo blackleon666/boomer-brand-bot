@@ -1,6 +1,8 @@
 import logging
 import os
 import sys
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -21,6 +23,23 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+# Health check handler for Render
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(b'Boomer Brand Bot is running!')
+    
+    def log_message(self, format, *args):
+        pass  # Suppress logging
+
+def run_health_check_server():
+    port = int(os.getenv("PORT", 10000))
+    server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
+    logger.info(f"Health check server running on port {port}")
+    server.serve_forever()
 
 async def unknown(update, context):
     await update.message.reply_text(
@@ -43,6 +62,10 @@ def main():
         logger.error("Telegram token not set! Please configure .env file")
         print("HATA: Lütfen .env dosyasında TELEGRAM_TOKEN ayarlayın!")
         return
+    
+    # Start health check server in a separate thread
+    health_thread = threading.Thread(target=run_health_check_server, daemon=True)
+    health_thread.start()
     
     # Create the Application
     application = Application.builder().token(TELEGRAM_TOKEN).build()
