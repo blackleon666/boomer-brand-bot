@@ -11,8 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Create virtual environment and install dependencies
+RUN python -m venv /app/venv && \
+    /app/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
@@ -22,6 +23,7 @@ RUN mkdir -p data logs
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
+ENV PATH="/app/venv/bin:$PATH"
 
 # Run the bot
 CMD ["python", "bot.py"]
