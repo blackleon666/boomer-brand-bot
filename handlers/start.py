@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from config import WHATSAPP_LINK
+from config import WHATSAPP_LINK, INSTAGRAM_LINK
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -20,11 +20,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/sikayet - Şikayet veya iade bildir\n"
         "/kampanya - Kampanyaları görüntüle (yöneticiler)\n"
         "/stats - İstatistikleri görüntüle\n\n"
-        f"💡 *Fiyat, stok ve kampanya detayları için WhatsApp'tan iletişime geçebilirsiniz:*\n{WHATSAPP_LINK}"
+        f"💡 *Fiyat, stok ve kampanya detayları için WhatsApp'tan iletişime geçebilirsiniz:*\n{WHATSAPP_LINK}\n\n"
+        f"📸 *Sosyal Medya:*\nTelegram: @Boomerbrandd\nInstagram: {INSTAGRAM_LINK}"
     )
     keyboard = [
         [InlineKeyboardButton("🛍️ Ürün Kataloğu", callback_data='catalog')],
-        [InlineKeyboardButton("📱 WhatsApp ile İletişim", url=WHATSAPP_LINK)]
+        [InlineKeyboardButton("📱 WhatsApp", url=WHATSAPP_LINK)],
+        [InlineKeyboardButton("📸 Instagram", url=INSTAGRAM_LINK)]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(welcome_message, reply_markup=reply_markup, parse_mode='Markdown')

@@ -14,3 +14,4 @@ LOG_PATH = os.getenv("LOG_PATH", os.path.join(basedir, "logs", "chat.log.enc"))
 ADMIN_USER_IDS = [int(x) for x in os.getenv("ADMIN_USER_IDS", "").split(",") if x.strip().isdigit()]
 WHATSAPP_LINK = os.getenv("WHATSAPP_LINK", "https://wa.me/boomermerter")
 TELEGRAM_GROUP_ID = os.getenv("TELEGRAM_GROUP_ID", "@Boomerbrandd")
+INSTAGRAM_LINK = os.getenv("INSTAGRAM_LINK", "https://www.instagram.com/boomermerter/")
