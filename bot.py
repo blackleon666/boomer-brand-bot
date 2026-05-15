@@ -68,10 +68,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except:
         pass
     
-    # AI yanit
+    # AI yanit - Markdown destekli
     try:
         response = generate(msg, user_id=user.id)
-        await update.message.reply_text(response)
+        await update.message.reply_text(response, parse_mode='Markdown')
         print(f"[BOT] {response[:30]}...")
     except Exception as e:
         print(f"[ERROR] {e}")
