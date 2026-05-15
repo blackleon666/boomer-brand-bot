@@ -1,0 +1,15 @@
+[Unit]
+Description=Boomer Brand Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/boomer-bot
+ExecStart=/opt/boomer-bot/venv/bin/python bot.py
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
