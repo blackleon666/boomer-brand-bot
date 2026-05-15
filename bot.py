@@ -21,11 +21,16 @@ from handlers.analytics import stats
 from llm.inference import generate
 import db.repo as db_repo
 
+# Debug logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+print("="*50)
+print("BOOMER BRAND BOT YUKLENIYOR...")
+print("="*50)
 
 # ============================================
 # HEALTH CHECK SERVER
@@ -52,47 +57,69 @@ def run_health_check_server():
             time.sleep(5)
 
 # ============================================
-# SOHBET HANDLER
+# ANA CHAT HANDLER - TUM MESAJLARI YANITLAR
 # ============================================
 async def chat_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Tüm metin mesajlarını işleyen ana AI handler"""
+    
+    # Mesaj kontrolü
     if not update.message or not update.message.text:
         return
     
-    user_message = update.message.text.strip()
+    message_text = update.message.text.strip()
     user = update.effective_user
     
-    # Her istek için yeni session oluştur
+    print(f"[CHAT] User {user.id} (@{user.username}): {message_text}")
+    
+    # Önce kullanıcıyı kaydet
     db = db_repo.SessionLocal()
     try:
         db_user = db_repo.get_or_create_user(db, user.id, user.username, user.first_name)
-        db_repo.update_user_context(db, user.id, user_message)
+        db_repo.update_user_context(db, user.id, message_text)
+        print(f"[DB] User saved/updated: {user.id}")
     except Exception as e:
-        logger.warning(f"User update error: {e}")
+        print(f"[DB] Error: {e}")
     finally:
         db.close()
     
-    await update.message.chat.send_action("typing")
-    
+    # Kullanıcıya yazıyor göster
     try:
-        response = generate(user_message, user_id=user.id)
-        await update.message.reply_text(response)
-        logger.info(f"Chat response to user {user.id}")
+        await update.message.chat.send_action("typing")
+    except:
+        pass
+    
+    # AI'dan yanıt al
+    try:
+        response = generate(message_text, user_id=user.id)
+        print(f"[AI] Response: {response[:100]}...")
         
-        # Yöneticiye rapor
-        await report_to_admin(update, user, user_message, response)
+        # Yanıtı gönder
+        await update.message.reply_text(response)
+        print(f"[SENT] Response to user {user.id}")
+        
+        # Yöneticiye rapor (önemli mesajlar)
+        await report_to_admin(update, user, message_text, response)
         
     except Exception as e:
+        print(f"[ERROR] Chat error: {e}")
         logger.error(f"Chat error: {e}")
-        await update.message.reply_text(f"🤖 Boomer Brand olarak şu anda yanıt veremiyorum.\n\nDetaylı yardım: {WHATSAPP_LINK}")
+        try:
+            await update.message.reply_text(
+                f"🤖 Boomer Brand olarak şu anda size yanıt veremiyorum.\n\n"
+                f"Detaylı yardım için: {WHATSAPP_LINK}"
+            )
+        except:
+            pass
 
 async def report_to_admin(update: Update, user, user_message: str, response: str):
-    keywords = ["sipariş", "satın", "fiyat", "kampanya", "şikayet", "iade", "yardım", "bilgi", "alabilir"]
-    is_important = any(kw in user_message.lower() for kw in keywords)
+    """Önemli mesajları yöneticiye raporla"""
+    important_keywords = ["sipariş", "satın", "fiyat", "kampanya", "indirim", "şikayet", "iade", "yardım", "bilgi", "alabilir", "almak", "vermek"]
+    is_important = any(kw in user_message.lower() for kw in important_keywords)
     
     if is_important:
         try:
-            report_text = f"""📢 *Yeni Lead/Rapor*
-            
+            report = f"""📢 *Yeni Lead/Rapor*
+
 👤 *Kullanıcı:* {user.first_name or 'Bilinmiyor'} (@{user.username or 'yok'})
 🆔 ID: `{user.id}`
 
@@ -102,65 +129,92 @@ async def report_to_admin(update: Update, user, user_message: str, response: str
 
             await update.bot.send_message(
                 chat_id=TELEGRAM_GROUP_ID,
-                text=report_text,
+                text=report,
                 parse_mode='Markdown'
             )
+            print(f"[REPORT] Sent to admin")
         except Exception as e:
-            logger.error(f"Admin report error: {e}")
+            print(f"[REPORT] Error: {e}")
 
+# ============================================
+# BİLİNMEYEN KOMUT HANDLER
+# ============================================
 async def unknown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Bilinmeyen komutları AI'a yönlendir"""
     if not update.message or not update.message.text:
         return
     
-    user_message = update.message.text.strip()
-    if user_message.startswith('/'):
+    message_text = update.message.text.strip()
+    if message_text.startswith('/'):
         await update.message.chat.send_action("typing")
-        response = generate(f"Kullanıcı şu komutu gönderdi: {user_message}")
+        response = generate(f"Kullanıcı şu komutu gönderdi: {message_text}. Bu komutu tanımıyorum. Uygun komutları açıkla.")
         await update.message.reply_text(response)
 
 # ============================================
-# RUN BOT
+# BOT ÇALIŞTIRMA
 # ============================================
 def run_bot():
     while True:
         try:
             if not TELEGRAM_TOKEN or TELEGRAM_TOKEN == "your_telegram_token_here":
                 logger.error("Telegram token not set!")
-                print("HATA: TELEGRAM_TOKEN ayarlanmadi!")
+                print("❌ HATA: TELEGRAM_TOKEN ayarlanmadi!")
+                print("   Lütfen .env dosyasını düzenleyin")
                 time.sleep(10)
                 continue
             
+            print("✅ Telegram token ok")
+            
             application = Application.builder().token(TELEGRAM_TOKEN).build()
+            print("✅ Application oluşturuldu")
 
-            # Handlers
+            # ===== HANDLER SIRALAMASI ÖNEMLI! =====
+            # Önce command handler'lar
             application.add_handler(CommandHandler("start", start.start))
             application.add_handler(CommandHandler("help", start.help_command))
             application.add_handler(CommandHandler("katalog", catalog.catalog))
-            application.add_handler(CallbackQueryHandler(catalog.product_detail, pattern="^product_"))
-            application.add_handler(CallbackQueryHandler(order.order, pattern="^order_"))
             application.add_handler(CommandHandler("siparis", order.order))
             application.add_handler(CommandHandler("durum", order.order_status))
             application.add_handler(CommandHandler("sikayet", complaint.complaint_start))
             application.add_handler(CommandHandler("cancel", complaint.complaint_cancel))
-            application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, complaint.complaint_receive))
             application.add_handler(CommandHandler("kampanya", marketing.campaign))
             application.add_handler(CommandHandler("stats", analytics.stats))
+            
+            # Callback query handler
+            application.add_handler(CallbackQueryHandler(catalog.product_detail, pattern="^product_"))
+            application.add_handler(CallbackQueryHandler(order.order, pattern="^order_"))
+            
+            # Mesaj handler - şikayet akışı
+            application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, complaint.complaint_receive))
+            
+            # ANA AI CHAT HANDLER - EN SONDA
             application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat_handler))
+            
+            # Bilinmeyen komutlar
             application.add_handler(MessageHandler(filters.COMMAND, unknown_handler))
 
-            print(f"🤖 Boomer Brand Bot başladı! (24/7 Mode)")
-            print(f"   Telegram API: {telegram.__version__}")
+            print("="*50)
+            print("🤖 BOOMER BRAND BOT AKTIF!")
+            print("   Telegram API: {}".format(telegram.__version__))
+            print("   AI: HuggingFace Mistral/Llama")
+            print("   Mode: 24/7 Polling")
+            print("="*50)
             
             application.run_polling()
             
         except Exception as e:
             logger.error(f"Bot crashed: {e}")
-            print(f"Bot hata verdi! 5 saniye içinde yeniden başlatılacak...")
+            print(f"❌ Bot hata verdi: {e}")
+            print("   5 saniye içinde yeniden başlatılacak...")
             time.sleep(5)
 
 def main():
+    # Health check
     health_thread = threading.Thread(target=run_health_check_server, daemon=True)
     health_thread.start()
+    print("✅ Health check server başlatıldı")
+    
+    # Bot
     run_bot()
 
 if __name__ == '__main__':
