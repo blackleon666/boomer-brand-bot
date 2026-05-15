@@ -2,140 +2,226 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import requests
-import json
-
 # ============================================================================
-# BOOMER BRAND AI SISTEMI - YENI VERSIYON
+# BOOMER BRAND YAPAY ZEKA - TAM EĞİTİM (EMOJI YOK)
 # ============================================================================
 
 WHATSAPP_LINK = "https://wa.me/boomermerter"
 INSTAGRAM_LINK = "https://www.instagram.com/boomermerter/"
 TELEGRAM_LINK = "@Boomerbrandd"
-
-# API Key'yi config'den al
-try:
-    from config import HF_API_KEY
-except:
-    HF_API_KEY = None
+INSTAGRAM_KURUCU = "https://www.instagram.com/1suayipsolmaz"
+KONUM = "Istanbul/Merter"
 
 def generate(prompt, user_id=None):
-    """Ana generate fonksiyonu - API'ye bagli olmadan calisir"""
-    
+    """Ana generate fonksiyonu - Marka bilinciyle"""
     print(f"[AI] Processing: {prompt}")
-    
-    # HuggingFace API test et
-    ai_response = get_huggingface_response(prompt)
-    
-    if ai_response:
-        return ai_response
-    
-    # Fallback - yerli yedek yanitlar
-    return get_local_response(prompt)
+    return generate_brand_response(prompt)
 
-def get_huggingface_response(prompt):
-    """HuggingFace API ile yanit al"""
+def generate_brand_response(prompt):
+    """Marka bilinçli yanıt üretici"""
     
-    if not HF_API_KEY or HF_API_KEY == "":
-        print("[AI] No API key, using local responses")
-        return None
-    
-    # Farkli modelleri dene
-    models = [
-        "microsoft/phi-2",  # Daha kucuk ama hizli
-        "google/flan-t5-small",  # Guvenilir
-        "facebook/opt-125m",  # Çok hizli
-    ]
-    
-    for model in models:
-        try:
-            print(f"[AI] Trying model: {model}")
-            API_URL = f"https://api-inference.huggingface.co/models/{model}"
-            headers = {"Authorization": f"Bearer {HF_API_KEY}"}
-            
-            full_prompt = f"""Sen Boomer Brand markasinin yapay zeka müsteri temsilcisisin. 
-Kisa ve net yanit ver.
-Soru: {prompt}
-Yanit:"""
-            
-            payload = {
-                "inputs": full_prompt,
-                "parameters": {
-                    "max_new_tokens": 100,
-                    "temperature": 0.5
-                }
-            }
-            
-            response = requests.post(API_URL, headers=headers, json=payload, timeout=15)
-            
-            if response.status_code == 200:
-                result = response.json()
-                if isinstance(result, list) and len(result) > 0:
-                    text = result[0].get("generated_text", "").strip()
-                    if text and len(text) > 5:
-                        print(f"[AI] Success from {model}")
-                        return clean_response(text)
-                        
-        except Exception as e:
-            print(f"[AI] {model} error: {e}")
-            continue
-    
-    print("[AI] All models failed, using local responses")
-    return None
-
-def clean_response(text):
-    """Yanıtı temizle"""
-    if not text:
-        return None
-    
-    # Prompt kısmını kaldır
-    if "Yanit:" in text:
-        text = text.split("Yanit:")[-1].strip()
-    if "Answer:" in text:
-        text = text.split("Answer:")[-1].strip()
-    
-    # Temizle
-    text = text.strip()
-    if len(text) > 300:
-        text = text[:297] + "..."
-    
-    return text
-
-def get_local_response(prompt):
-    """Yerli yedek yanitlar"""
     p = prompt.lower()
     
-    # Selamlama
-    if any(w in p for w in ["merhaba", "selam", "hi", "naber", "nasilsin", "hello"]):
-        return "Merhaba! Boomer Brand musteri temsilcisiyim. Size nasil yardimci olabilirim? Urunler icin /katalog yazabilirsiniz."
+    # KURUCU/SORGU/CİDDİYET SORULARI
+    if any(w in p for w in ["kimin", "sahibi", "patron", "yetkili", "kim kurdu", "kim yonetiyor", "boss", "owner", "yönetmen"]):
+        return f"""Boomer Brand'in kurucusu ve sahibi *Suayip Solmaz* Bey'dir.
+
+Suayip Solmaz, Merter giyim piyasasinda cekirdekten yetismis, Turkiye genelinde yuzlerce esnaf, marka ve sirketle baglantilar kurmus basarili bir girisimci, esnaf ve is adamidir.
+
+Daima guvenilir ticaretler ile adini sektorde altin harflerle yazdirmistir.
+
+Instagram: {INSTAGRAM_KURUCU}
+
+Size nasil yardimci olabilirim?"""
     
-    # Fiyat
-    if any(w in p for w in ["fiyat", "kac", "ucret", "ne kadar", "para", "tl", "lira"]):
-        return f"Guncel fiyatlar icin WhatsApp uzerinden iletisime gecebilirsiniz: {WHATSAPP_LINK}"
+    # KONUM/ADRES
+    if any(w in p for w in ["yeriniz", "magaza", "adres", "nerede", "konum", "location", "shop", "magaza nerede", "nereden alabilirim"]):
+        return f"""Magazamiz *Istanbul/Merter*'dedir!
+
+Merter, Istanbul'un en onemli giyim merkezlerinden biridir. 
+
+Urunlerimizi gormek icin: /katalog
+
+Detayli adres ve yol tarifi icin WhatsApp uzerinden iletisime gecabilirsiniz:
+{WHATSAPP_LINK}
+
+Sizleri magazamizda misafir etmekten mutluluk duyariz!"""
     
-    # Kampanya
-    if any(w in p for w in ["kampanya", "indirim", "yuzde", "promo", "indirim"]):
-        return f"Aktif kampanyalar icin WhatsApp: {WHATSAPP_LINK}"
+    # KALİTE
+    if any(w in p for w in ["kalite", "kaliteli mi", "guvenilir", "nasil", "eger", "kalitelimi", "malzeme", "urun kalitesi", "dayanikli mi"]):
+        return f"""Hic supheeniz olmasin!
+
+Boomer Brand olarak sizlere daima en kaliteli urunleri, en ideal fiyata sunmak icin tum emegimizi sarf ediyoruz.
+
+Urunlerimizi Telegram grubumuzdan veya magazamizda inceleyebilirsiniz. 
+Telegram: {TELEGRAM_LINK}
+
+Bize WhatsApp uzerinden 7/24 ulasabilirsiniz:
+{WHATSAPP_LINK}
+
+Memnuniyetiniz bizim icin en onemli onceliktir!"""
     
-    # Siparis
-    if any(w in p for w in ["siparis", " satin", "almak", "vermek", "order"]):
-        return f"Siparis vermek icin WhatsApp: {WHATSAPP_LINK}. Urunler icin /katalog yazabilirsiniz."
+    # SELAMLAMA
+    if any(w in p for w in ["merhaba", "selam", "hi", "naber", "nasilsin", "hello", "hey"]):
+        return f"""Merhaba! Boomer Brand musteri temsilcisiyim!
+
+Size nasil yardimci olabilirim?
+
+- Urunlerimizi gormek icin: /katalog
+- Siparis vermek icin: WhatsApp uzerinden
+- Sikayetinizi bildirmek icin: /sikayet
+
+Bize ulasmak icin: {WHATSAPP_LINK}
+
+Hos geldiniz!"""
     
-    # Sikayet
-    if any(w in p for w in ["sikayet", "iade", "sorun", "problem", "sikayetim"]):
-        return "Sikayetinizi dinlemek icin buradayim. Detaylar icin WhatsApp: {WHATSAPP_LINK}. /sikayet yazarak da bildirebilirsiniz."
+    # FİYAT
+    if any(w in p for w in ["fiyat", "kac", "ucret", "ne kadar", "para", "tl", "lira", "fiyati", "fiyatlar", "ne var", "kac lira"]):
+        return f"""Merhaba!
+
+Guncel fiyatlarimiz ve ozel tekliflerimiz icin WhatsApp hatimizi ziyaret edebilirsiniz:
+
+{WHATSAPP_LINK}
+
+Size ozel indirimler ve kampanyalarimiz olabilir!
+
+Ayrıca urunlerimizi Telegram grubumuzda da inceleyebilirsiniz:
+{TELEGRAM_LINK}
+
+Saygilarmyla."""
     
-    # Urun
-    if any(w in p for w in ["urun", "urunler", "katalog", "ne var", "neler var", "giyim"]):
-        return "Urunlerimizi gormek icin /katalog yazabilirsiniz. Detayli bilgi: {WHATSAPP_LINK}"
+    # KAMPANYA
+    if any(w in p for w in ["kampanya", "indirim", "yuzde", "promo", "offer", "discount", "ozel", "firsat"]):
+        return f"""Merhaba!
+
+Aktif kampanyalarimiz ve ozel indirimlerimiz icin WhatsApp hatimizi ziyaret edin:
+
+{WHATSAPP_LINK}
+
+Instagram ve Telegram hesaplarimizi da takip etmeyi unutmayin:
+- Instagram: {INSTAGRAM_LINK}
+- Telegram: {TELEGRAM_LINK}
+
+Sizlere ozel fırsatlar kacirmayin!"""
     
-    # yardim
-    if any(w in p for w in ["yardim", "help", "ne yaparsin", "neler yaparsin", "ne yapabilirsin"]):
-        return "Size yardimci olabilirim: /katalog (urunler), /siparis (siparis), /sikayet (sikayet). Daha fazla bilgi icin WhatsApp: {WHATSAPP_LINK}"
+    # SİPARİŞ
+    if any(w in p for w in ["siparis", "satin", "almak", "vermek", "order", "alacagim", "istiyorum", "nasil alirim"]):
+        return f"""Merhaba!
+
+Siparisinizi hemen almak icin WhatsApp hatimiz uzerinden size yardimci olabiliriz:
+
+{WHATSAPP_LINK}
+
+Urunlerimizi incelemek icin /katalog komutunu kullanabilirsiniz.
+
+Telegram grubumuzda da urunleri gorebilirsiniz:
+{TELEGRAM_LINK}
+
+Saygilarmyla."""
     
-    # Tesekkur
-    if any(w in p for w in ["tesekkur", "tesekkurler", "tsk", "sagol", "thank"]):
-        return "Rica ederim! Yardimci olmaktan mutluluk duyarim."
+    # ŞİKAYET
+    if any(w in p for w in ["sikayet", "iade", "sorun", "problem", "sikayetim", "bozuk", "kotu", "ayipli"]):
+        return f"""Merhaba!
+
+Yasadiginiz sorunu duyduguma uzgunum. Size yardimci olmak icin buradayim!
+
+Sikayetinizi /sikayet komutuyla bildirebilir veya direkt WhatsApp uzerinden destek ekibimizle iletisime gecabilirsiniz:
+
+{WHATSAPP_LINK}
+
+En kisa surede cozum saglayacagiz. Musteri memnuniyeti bizim icin cok onemli!
+
+Saygilarmyla."""
     
-    # Varsayilan
-    return f"Boomer Brand olarak yardimci olmaktan mutluluk duyarim! Urunler: /katalog, Siparis: {WHATSAPP_LINK}"
+    # ÜRÜN
+    if any(w in p for w in ["urun", "urunler", "katalog", "ne var", "neler var", "giyim", "elbise", "pantolon", "tisort", "ceket", "mont"]):
+        return f"""Merhaba!
+
+Urun katalogumuzu gormek icin /katalog komutunu kullanabilirsiniz!
+
+Urunlerimiz Telegram grubumuzda da duzenli olarak paylasilmaktadir:
+{TELEGRAM_LINK}
+
+Detayli bilgi, fiyat ve stok durumu icin WhatsApp hatimiz:
+{WHATSAPP_LINK}
+
+Merter'in en kaliteli urunleri sizleri bekliyor!
+
+Saygilarmyla."""
+    
+    # İLETİŞİM
+    if any(w in p for w in ["iletisim", "contact", "ulas", "whatsapp", "telefon", "adres", "mail", "eposta"]):
+        return f"""Boomer Brand Iletisim Bilgileri:
+
+WhatsApp: {WHATSAPP_LINK}
+Instagram: {INSTAGRAM_LINK}
+Telegram: {TELEGRAM_LINK}
+Magaza: Istanbul/Merter
+
+7/24 size yardimci olmaya haziriz!
+
+Saygilarmyla."""
+    
+    # TEŞEKKÜR
+    if any(w in p for w in ["tesekkur", "tesekkurler", "tsk", "tsk", "sagol", "sagol", "thank"]):
+        return """Merhaba!
+
+Rica ederim! Yardimci olmaktan cok mutluluk duyarim.
+
+Herhangi bir sorunuz olursa cekinmeden sorun!
+
+Saygilarmyla,
+Boomer Brand"""
+    
+    # YARDIM
+    if any(w in p for w in ["yardim", "help", "ne yaparsin", "neler yaparsin", "ne yapabilirsin", "neler var", "komutlar"]):
+        return f"""Boomer Brand Asistani - Size yardimci olabilecekler:
+
+/katalog - Urunlerimizi goruntule
+/siparis <urun_id> - Siparis ver
+/sikayet - Sikayet veya iade bildir
+/stats - Istatistikleri goruntule
+/kampanya - Kampanyalari goruntule (sadece yonetici)
+
+Dilerseniz direkt sorunuzu yazin, yanitlayayim!
+
+Iletisim: {WHATSAPP_LINK}
+
+Saygilarmyla."""
+    
+    # HAKKINDA
+    if any(w in p for w in ["hakkinda", "hakkinda", "nedir", "neyin", "ne marka", "ne marka", "brand", "kimsiniz", "neyi satiyorsunuz"]):
+        return f"""Boomer Brand Hakkinda:
+
+Boomer Brand, Istanbul/Merter'de faaliyet gosteren guvenilir bir giyim markasidir.
+
+Kurucumuz *Suayip Solmaz* Bey, sektorde yillarin deneyimine sahip basarili bir is insanidir.
+
+Politikamiz:
+- En kaliteli urunler
+- En ideal fiyatlar  
+- Guvenilir ticaret
+- Musteri memnuniyeti
+
+Urunlerimiz: Pantolon, tisort, ceket, mont, gomlek ve daha fazlasi!
+
+Bize ulasin:
+{WHATSAPP_LINK}
+
+Saygilarmyla."""
+    
+    # VARSayıLAN
+    return f"""Merhaba! Boomer Brand musteri temsilcisiyim!
+
+Size yardimci olmak icin buradayim:
+
+/katalog - Urunlerimizi goruntule
+/siparis - Siparis vermek icin WhatsApp
+/sikayet - Sikayet veya iade bildir
+/stats - Istatistikleri goruntule
+
+Ya da direkt sorunuzu yazin, yanitlayayim!
+
+Iletisim: {WHATSAPP_LINK}
+
+Saygilarmyla."""
