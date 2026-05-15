@@ -5,12 +5,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from telegram import Update
 from telegram.ext import ContextTypes
 from db.repo import SessionLocal, get_active_campaigns, add_campaign
-from config import WHATSAPP_LINK, ADMIN_USER_IDS
+from config import WHATSAPP_LINK, is_admin
 
 async def campaign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     
-    if user.id not in ADMIN_USER_IDS:
+    # Admin kontrolü - hem ID hem username ile
+    if not is_admin(user.id, user.username):
         await update.message.reply_text("⛔ Bu komut sadece yöneticiler için!")
         return
 
