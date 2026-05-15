@@ -1,71 +1,138 @@
+"""
+BOOMER BRAND YAPAY ZEKA ASISTANI - V4
+====================================
+En iyi müşteri temsilcisi deneyimi
+
+Ozellikler:
+- Akıllı intent esleme
+- Kisa ve net yanıtlar
+- Soru sorma
+- Dogal Turkce
+"""
+
 import os
 import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# BOOMER BRAND YAPAY ZEKA - TAM EGITILMIS
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-WHATSAPP = "https://wa.me/boomermerter"
-INSTAGRAM = "https://www.instagram.com/boomermerter/"
-TELEGRAM = "@Boomerbrandd"
-KURUCU_INSTA = "https://www.instagram.com/1suayipsolmaz"
+# ============================================================
+# MARKA BİLGİLERİ
+# ============================================================
 
-def generate(prompt, user_id=None):
-    return smart_response(prompt)
+BRAND = {
+    "name": "Boomer Brand",
+    "founder": "Şuayip Solmaz",
+    "location": "İstanbul Merter",
+    "whatsapp": "https://wa.me/boomermerter",
+    "instagram": "https://www.instagram.com/boomermerter/",
+    "telegram": "@Boomerbrandd"
+}
 
-def smart_response(prompt):
-    p = prompt.lower()
+# ============================================================
+# INTENT MAP
+# ============================================================
+
+INTENTS = {
+    "greeting": ["merhaba", "selam", "hi", "hey", "slm", "sg", "naber", "nasilsin", "gunaydin", "hos geldin", "merhabalar"],
+    "thanks": ["tesekkur", "tesekkurler", "ty", "tsk", "sagol", "sagolun", "eyvallah", "rica", "cok tesekkurler"],
+    "founder": ["kimin", "sahibi", "patron", "boss", "kim kurdu", "kurucu", "kurucusu", "yetkili", "sorumlu", "yonetici", "siz kimsiniz", "kimsiniz", "mudur", "patronunuz", "yonetici kim", "lider"],
+    "location": ["nerede", "adres", "konum", "yer", "magaza", "dukkan", "neredesiniz", "adresiniz", "gelmek", "ziyaret", "nerden", "nasil gelinir", "yol tarifi", "merter", "istanbul", "nereli", "adres"],
+    "brand": ["marka", "brand", "boomer brand", "hakkinda", "nedir", "neyin", "neyi", "firma", "sirket", "kurulus", "tarihce", "vizyon", "misyon", "ne is yapiyorsunuz", "neyi satiyorsunuz"],
+    "quality": ["kalite", "kaliteli", "malzeme", "kumas", "guvenilir", "nasil", "iyi mi", "dayanikli", "kalitelimi"],
+    "price": ["fiyat", "fiyati", "fiyatlar", "kac", "ucret", "para", "tl", "lira", "ne kadar", "ucuz mu", "pahali mi", "indirim", "iskonto", "fiyat ne", "kac para", "fiyati ne", "ucreti ne"],
+    "product": ["urun", "urunler", "ne var", "neler var", "pantolon", "tishort", "gomlek", "ceket", "mont", "sweatshirt", "sort", "katalog", "giyim", "kiyafet", "moda", "store", "shop", "stok", "satiyorsunuz", "gormek", "bakmak", "incelemek", "hangi urun", "ne satiyorsunuz", "modeller", "urunleriniz", "koleksiyon", "neler satiyorsunuz"],
+    "order": ["siparis", "siparis vermek", "order", "almak", "satın almak", "alacagim", "istiyorum", "almak istiyorum", "nasil alirim", "alisveris", "vermek istiyorum", "urun almak", "bir sey almak"],
+    "complaint": ["sikayet", "sikayetim", "iade", "sorun", "problem", "bozuk", "kotu", "ayipli", "begenedim", "pazardim", "degistirme", "iade etmek", "bozdu", "calismadi", "uzgunum", "hayal kirikligi"],
+    "contact": ["iletisim", "contact", "whatsapp", "telefon", "ulasmak", "numara", "mail", "eposta", "ulas", "baglanmak", "telefon numaraniz", "numaraniz", "irttibat", "irtibat", "bilgi"],
+    "social": ["instagram", "insta", "ig", "telegram", "facebook", "sosyal", "sayfa", "kanal", "profil", "reels", "video", "story", "insta hesabiniz", "insta adresiniz"],
+    "help": ["yardim", "yardim", "help", "yardimci", "komut", "komutlar", "ne yaparsin", "neler yaparsin", "ne yapabilirsin", "nelerin var", "ne var", "ne yapalim", "neleriniz var", "bana yardim"],
+    "tracking": ["kargo", "kargom", "kargo takip", "kargo takibi", "kargom nerede", "kargom ne zaman", "kargo durumu", "kargoya verdiniz mi", "siparisim nerede", "teslimat", "kargo numarasi"],
+    "order_tracking": ["siparis takip", "siparis durumu", "siparisim", "siparislerim", "gecmis siparisler", "siparis durum", "siparisi kontrol", "siparislerim nerede"],
+}
+
+# ============================================================
+# YANITLAR
+# ============================================================
+
+RESPONSES = {
+    "greeting": "Merhaba! Size nasil yardimci olabilirim?",
+    "thanks": "Rica ederim. Baska bir konuda yardimci olabilir miyim?",
+    "founder": "Kurucusu Şuayip Solmaz'dir.",
+    "location": "Merter'deyiz. Istanbul'un onemli tekstil carsilarindan birinin merkezindeyiz.",
+    "brand": "Boomer Brand, Istanbul Merter'de tekstil sektorunde faaliyet gosteren bir markadir.",
+    "quality": "Kalite standartlarimiz yuksektir.",
+    "price": "Fiyat bilgisi icin WhatsApp'tan yazabilirsiniz:\nhttps://wa.me/boomermerter",
+    "product": "Urunlerimizi Instagram'dan inceleyebilirsiniz:\nhttps://www.instagram.com/boomermerter/",
+    "order": "Siparis vermek icin WhatsApp'tan yazabilirsiniz:\nhttps://wa.me/boomermerter",
+    "complaint": "Yasadiginiz sorun icin uzgunum. Cozmak icin WhatsApp'tan ulasabilirsiniz:\nhttps://wa.me/boomermerter",
+    "contact": "Iletisim:\nWhatsApp: https://wa.me/boomermerter\nInstagram: https://www.instagram.com/boomermerter/\nTelegram: @Boomerbrandd",
+    "social": "Instagram: https://www.instagram.com/boomermerter/\nTelegram: @Boomerbrandd",
+    "help": "Komutlar:\n/katalog - Urunler\n/kampanya - Kampanyalar\n/siparis - Siparis\n/siparistakip - Siparis takip\n/kargotakip - Kargo takip\n/iletisim - Iletisim",
+    "tracking": "Kargo takip icin /kargotakip yazabilirsiniz.",
+    "order_tracking": "Siparis takip icin /siparistakip yazabilirsiniz.",
+    "fallback": "Size yardimci olabilecegim konular: urunler, fiyat, siparis, sikayet, iletisim. Hangisini tercih edersiniz?"
+}
+
+# ============================================================
+# ENGINE
+# ============================================================
+
+def find_best_intent(text: str) -> str:
+    if not text or not text.strip():
+        return "fallback"
     
-    # KURUCU
-    if any(w in p for w in ["kimin", "sahibi", "patron", "yetkili", "kim kurdu", "boss", "owner", "yönetmen", "kimin", "kursahibi", "yöneticiniz", "sorumlu"]):
-        return "Merhaba! \n\nBoomer Brand'in kurucusu ve sahibi **Suayip Solmaz** Bey'dir.\n\nKendisi yillardi Merter'te tekstil sektorunde calisan, sektoru cok iyi taniyan, guvenilir ve basarili bir is insanidir. Turkiye genelinde yuzlerce esnaf ve markayla is baglantilari kurmus, adini sektorde duyurmus bir girisimcidir.\n\nMisyonumuz: Musterilerimize en kaliteli urunleri en uygun fiyatla sunmak ve guvenilir hizmet vermektir.\n\nSize yardimci olmami ister misiniz?"
+    text = text.strip().lower()
     
-    # KONUM
-    if any(w in p for w in ["yeriniz", "mağaza", "adres", "nerede", "konum", "location", "shop", "neredesiniz", "adresiniz", "nerden", "gelmek", "ziyaret"]):
-        return "Merhaba!\n\nMagazamiz Istanbul Merter'tedir. Merter, Istanbul'un en buyuk tekstil ve giyim merkezlerinden biridir.\n\nMagazamiza gelip urunleri yakindan inceleyebilir, deneyebilir ve begendiginiz urunleri aninda satin alabilirsiniz.\n\nYol tarifi veya magaza hakkinda detayli bilgi ister misiniz? WhatsApp uzerinden yardimci olabilirim: " + WHATSAPP + "\n\nGorüşmek uzere!"
+    if len(text) <= 2:
+        return "greeting"
     
-    # KALITE
-    if any(w in p for w in ["kalite", "kaliteli mi", "guvenilir", "nasil", "kalitelimi", "malzeme", "dayanikli mi", "kaliteli", "kalite", "malzeme kalitesi", "kumas"]):
-        return "Merak etmeyin, kalite konusunda sizi asla yaniltmayiz!\n\nBoomer Brand olarak:\n- En kaliteli kumaslari kullaniyoruz\n- Iscilik ve dikis kalitesine dikkat ediyoruz\n- Türkiye'nin en iyi ureticileriyle calisiyoruz\n- Her urunu bizzat kontrol ediyoruz\n\nUrunlerimizi magazamizda veya Telegram grubumuzda gorebilirsiniz. " + TELEGRAM + "\n\nTatmin olmazsaniz kosulsuz iade garantisi sunuyoruz!\n\nYardimci olabilecek bir konu var mi?"
+    best_intent = None
+    best_match_len = 0
     
-    # SELAMLAMA
-    if any(w in p for w in ["merhaba", "selam", "hi", "naber", "nasilsin", "hello", "hey", "gunaydin", "iyi gunler", "slm", "sg"]):
-        return "Merhaba!\n\nBoomer Brand'dan selamlar! \n\nBen size yardimci olmak için buradayim. Bugun ne ariyordunuz? Urunlerimiz mi, fiyatlar mi, yoksa baska bir konu mu?\n\nMerak etmeyin, soru sormaktan cekinmeyin - ne bilirsem hemen yardimci olurum!\n\nOrnek:\n- Hangi urunleri var?\n- Fiyatlar ne?\n- Nasil siparis verilir?\n\nNe isterseniz sorun, yanitlayayim!"
+    for intent_name, keywords in INTENTS.items():
+        for keyword in keywords:
+            if text == keyword or f" {keyword} " in f" {text} ":
+                if len(keyword) > best_match_len:
+                    best_intent = intent_name
+                    best_match_len = len(keyword)
+            elif keyword in text and len(keyword) >= 3:
+                if len(keyword) > best_match_len:
+                    best_intent = intent_name
+                    best_match_len = len(keyword)
     
-    # FIYAT
-    if any(w in p for w in ["fiyat", "kac", "ücret", "ne kadar", "para", "tl", "lira", "fiyati", "fiyatlar", "ne var", "kac lira", "pazarlik", "indirim", "iskonto", "kampanya"]):
-        return "Merhaba!\n\nFiyatlarimiz hakkinda detayli bilgi almak istemeniz çok normal. Sizlere en uygun fiyatlari sunmak istiyoruz!\n\nWhatsApp uzerinden bize ulasin, size ozel fiyat teklifi yapalim:\n" + WHATSAPP + "\n\nAyrica:\n- Dostlarinizi getirdiginizde ekstra indirim\n- Sezon sonu indirimleri\n- Toplu alimlarda ozel fiyatlar\n\nMesgul oldugunuz bir is mi var? Tamam, WhatsApp'tan yazin, hemen donelim!\n\nSaygilarmyla."
+    return best_intent if best_intent else "fallback"
+
+
+def generate(prompt: str, user_id: str = None) -> str:
+    if not prompt or not prompt.strip():
+        return "Size nasil yardimci olabilirim?"
     
-    # URUN
-    if any(w in p for w in ["urun", "urunler", "katalog", "ne var", "neler var", "giyim", "elbise", "pantolon", "tisort", "ceket", "mont", "elbise", "ne satiyorsunuz"]):
-        return "Merhaba!\n\nUrun yelpazemiz oldukça genis! Pantolon, tisort, gomlek, ceket, mont, sweatshirt ve daha fazlasi...\n\nHer mevsime uygun, hem gunluk hem sik tasarimlarimiz var.\n\nKatalog göruntulemek için /katalog yazabilirsiniz.\n\nYa da hangi tarz urun ariyorsunuz? Ornegin:\n- Spor giyim mi?\n- Office tarzi mi?\n- Gunluk kiyasif mi?\n\nSize ozel öneri yapabilirim!\n\nDetaylar icin WhatsApp: " + WHATSAPP
+    prompt = prompt.strip()
     
-    # SIPARIS
-    if any(w in p for w in ["siparis", "satin", "almak", "vermek", "order", "alacagim", "istiyorum", "nasil alirim", "siparis vermek", "nasil siparis"]):
-        return "Merhaba!\n\nSiparis vermek çok kolay!\n\nWhatsApp uzerinden yazin, size siparis sürecini adim adim anlatayim:\n" + WHATSAPP + "\n\nSiparis sonrasi:\n- Kargo takibi yapilir\n- Olcu uyumsuzlugunda ucretsiz degisim\n- Memnuniyetsizlik durumunda iade\n\nYaninizdayim! Hangi urunu almak istediginizi soylerseniz hemen yardimci olayim!"
+    if prompt.startswith("/"):
+        return RESPONSES["fallback"]
     
-    # SIKAYET
-    if any(w in p for w in ["sikayet", "iade", "sorun", "problem", "sikayetim", "bozuk", "kotu", "ayipli", "begmedim", "pazardim"]):
-        return "Merhaba!\n\nYasadiginiz sorun hakkinda bilgi almam çok uzgun...\n\nHemen çözelim! Size ozel yardimci olmak istiyorum.\n\nSikayetinizi veya yasadiginiz problemi detayli yazin - en kisa surede çözelim!\n\nAyrica dilerseniz /sikayet komutuyla form doldurabilirsiniz.\n\nWhatsApp uzerinden de ulasabilirsiniz:\n" + WHATSAPP + "\n\nMusteri memnuniyeti bizim için en önemli konu!\n\nMerak etmeyin, çözüme kavusturacagiz!"
-    
-    # ILETISIM
-    if any(w in p for w in ["iletisim", "contact", "ulas", "whatsapp", "telefon", "adres", "mail", "eposta", "nasil ulasirim", "numaraniz", "telefon"]):
-        return "Merhaba!\n\nBize ulasmak çok kolay! Hangisini tercih edersiniz?\n\n- WhatsApp: " + WHATSAPP + "\n- Instagram: " + INSTAGRAM + "\n- Telegram: " + TELEGRAM + "\n- Magaza: Istanbul/Merter\n\nHangi konuda yardimci olmami isterseniz söyleyin!\n\n7/24 yaninizdayim!"
-    
-    # TESEKKUR
-    if any(w in p for w in ["tesekkur", "tesekkurler", "tsk", "sagol", "sagolun", "thank", "tesekkur ederim", "tesekkurler", "eywallah"]):
-        return "Rica ederim!\n\nYardimci olabildiysem ne mutlu!\n\nBir baska konuda yardimci olmami ister misiniz?\n\nOrnegin:\n- Urunler hakkinda sorulariniz var mi?\n- Fiyat bilgisi ister misiniz?\n- Kampanyalardan haberdar olmak ister misiniz?\n\nBuradayim!"
-    
-    # YARDIM
-    if any(w in p for w in ["yardim", "help", "ne yaparsin", "neler yaparsin", "ne yapabilirsin", "neler var", "komutlar", "neleri yapabilirsin", "neleri", "yapay zeka", "nasil calisirsin", "ne yaparsin"]):
-        return "Merhaba! Size yardimci olabilecek komutlar:\n\n- /katalog - Urunlerimizi görüntüle\n- /siparis - Siparis vermek için\n- /sikayet - Sikayet veya iade bildirmek için\n- /stats - Istatistikleri görmek için\n- /kampanya - Aktif kampanyalar için (sadece yönetici)\n\nAyrıca bana direkt yazabilirsiniz - ornegin:\n- Hangi tisortlariniz var?\n- Pantolon fiyatlari ne?\n- En yakin kampanya ne?\n\nHer soruniza yanit vereyim!\n\nWhatsApp: " + WHATSAPP + "\nInstagram: " + INSTAGRAM
-    
-    # HAKKINDA
-    if any(w in p for w in ["hakkinda", "hakkinda", "nedir", "neyin", "ne marka", "brand", "kimsiniz", "neyi satiyorsunuz", "nasil", "tarihçe", "kurulus"]):
-        return "Merhaba!\n\nBoomer Brand Hakkinda:\n\nBoomer Brand, Istanbul Merter'te kurulmus, kalite ve guven ilkeleriyle hareket eden bir giyim markasidir.\n\nKurucumuz **Suayip Solmaz** Bey, yillardir tekstil sektorunde calisan, sektoru tum detaylariyla bilen, musteri memnuniyetini on planda tutan bir is insanidir.\n\nNeden Boomer Brand?\n- Kalite garantisi\n- Uygun fiyat\n- Guvenilir hizmet\n- Memnuniyet taihhudu\n- Hizli teslimat\n\nSiz de ailemizin bir parçasi olmak ister misiniz?\n\n" + WHATSAPP + " uzerinden iletisime gecebilirsiniz!"
-    
-    # SOSYAL
-    if any(w in p for w in ["instagram", "telegram", "facebook", "sosyal", "takip", "sayfa", "grup", "kanal", "insta"]):
-        return "Merhaba!\n\nSosyal medyada da bizi takip edebilirsiniz!\n\n- Instagram: " + INSTAGRAM + "\n- Telegram: " + TELEGRAM + "\n\nKanallarimizda:\n- Ozel kampanyalar ve indirimler\n- Yeni urun duyurulari\n- Stilonerileri ve kombin ipuclari\n- Duyurular ve onemli haberler\n\nTakip edin, kacirmayin!"
-    
-    # VARSAYILAN
-    return "Merhaba!\n\nBoomer Brand musteri temsilcisiyim!\n\nSizlere yardimci olmak için buradayim. Herhangi bir sorunuz olursa cekinmeyin.\n\nOrnegin:\n- Urunlerimiz hakkinda bilgi almak ister misiniz?\n- Fiyatlarimizi sormak mi istiyorsunuz?\n- Nasil siparis verilir ogrenmek mi istiyorsunuz?\n\n/katalog yazarak urunlerimizi görebilir veya direkt sorunuzu yazabilirsiniz!\n\nWhatsApp: " + WHATSAPP + " - 7/24 yaninizdayim!"
+    intent = find_best_intent(prompt)
+    return RESPONSES.get(intent, RESPONSES["fallback"])
+
+
+if __name__ == "__main__":
+    tests = [
+        ("merhaba", "greeting"),
+        ("kimin", "founder"),
+        ("nerede", "location"),
+        ("fiyat", "price"),
+        ("urun", "product"),
+        ("siparis", "order"),
+        ("sikayet", "complaint"),
+        ("iletisim", "contact"),
+        ("instagram", "social"),
+        ("yardim", "help"),
+        ("kargo takip", "tracking"),
+        ("siparis takip", "order_tracking"),
+    ]
+    print("TEST:")
+    for t, expected in tests:
+        result = find_best_intent(t)
+        status = "OK" if result == expected else "HATA"
+        print(f"{status}: {t} -> {result}")
