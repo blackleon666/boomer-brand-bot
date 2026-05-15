@@ -19,7 +19,7 @@ from handlers.complaint import complaint_start, complaint_receive, complaint_can
 from handlers.marketing import campaign
 from handlers.analytics import stats
 from llm.inference import generate
-from db.repo import get_or_create_user, update_user_context, SessionLocal
+import db.repo as db_repo
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -28,7 +28,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ============================================
-# AUTO-RESTART FONKSİYONU
+# HEALTH CHECK SERVER
 # ============================================
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -45,7 +45,7 @@ def run_health_check_server():
     while True:
         try:
             server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
-            logger.info(f"Health check server started on port {port}")
+            logger.info(f"Health check on port {port}")
             server.serve_forever()
         except Exception as e:
             logger.error(f"Health check error: {e}")
@@ -61,11 +61,15 @@ async def chat_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text.strip()
     user = update.effective_user
     
+    # Her istek için yeni session oluştur
+    db = db_repo.SessionLocal()
     try:
-        db_user = get_or_create_user(context.bot.db_session, user.id, user.username, user.first_name)
-        update_user_context(context.bot.db_session, user.id, user_message)
+        db_user = db_repo.get_or_create_user(db, user.id, user.username, user.first_name)
+        db_repo.update_user_context(db, user.id, user_message)
     except Exception as e:
         logger.warning(f"User update error: {e}")
+    finally:
+        db.close()
     
     await update.message.chat.send_action("typing")
     
@@ -75,14 +79,14 @@ async def chat_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info(f"Chat response to user {user.id}")
         
         # Yöneticiye rapor
-        await report_to_admin(context, user, user_message, response)
+        await report_to_admin(update, user, user_message, response)
         
     except Exception as e:
         logger.error(f"Chat error: {e}")
         await update.message.reply_text(f"🤖 Boomer Brand olarak şu anda yanıt veremiyorum.\n\nDetaylı yardım: {WHATSAPP_LINK}")
 
-async def report_to_admin(context: ContextTypes.DEFAULT_TYPE, user, user_message: str, response: str):
-    keywords = ["sipariş", "satın", "fiyat", "kampanya", "şikayet", "iade", "yardım", "bilgi"]
+async def report_to_admin(update: Update, user, user_message: str, response: str):
+    keywords = ["sipariş", "satın", "fiyat", "kampanya", "şikayet", "iade", "yardım", "bilgi", "alabilir"]
     is_important = any(kw in user_message.lower() for kw in keywords)
     
     if is_important:
@@ -96,7 +100,7 @@ async def report_to_admin(context: ContextTypes.DEFAULT_TYPE, user, user_message
 
 📝 *Yanıt:* {response[:200]}..."""
 
-            await context.bot.send_message(
+            await update.bot.send_message(
                 chat_id=TELEGRAM_GROUP_ID,
                 text=report_text,
                 parse_mode='Markdown'
@@ -114,8 +118,10 @@ async def unknown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = generate(f"Kullanıcı şu komutu gönderdi: {user_message}")
         await update.message.reply_text(response)
 
+# ============================================
+# RUN BOT
+# ============================================
 def run_bot():
-    """Botu başlat ve hata olursa yeniden başlat"""
     while True:
         try:
             if not TELEGRAM_TOKEN or TELEGRAM_TOKEN == "your_telegram_token_here":
@@ -125,8 +131,6 @@ def run_bot():
                 continue
             
             application = Application.builder().token(TELEGRAM_TOKEN).build()
-            db = SessionLocal()
-            application.bot.db_session = db
 
             # Handlers
             application.add_handler(CommandHandler("start", start.start))
@@ -155,11 +159,8 @@ def run_bot():
             time.sleep(5)
 
 def main():
-    # Health check sunucusunu arka planda başlat
     health_thread = threading.Thread(target=run_health_check_server, daemon=True)
     health_thread.start()
-    
-    # Botu auto-restart ile çalıştır
     run_bot()
 
 if __name__ == '__main__':
