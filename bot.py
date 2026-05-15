@@ -16,6 +16,7 @@ from handlers.order import order_status
 from handlers.complaint import complaint_start, complaint_receive, complaint_cancel
 from handlers.marketing import campaign
 from handlers.analytics import stats
+from llm.inference import generate
 
 # Enable logging
 logging.basicConfig(
@@ -90,6 +91,26 @@ def main():
 
     # Handle unknown commands
     application.add_handler(MessageHandler(filters.COMMAND, unknown))
+    
+    # Sohbet (non-command) mesajları için AI handler
+    from telegram.ext import ContextTypes
+    
+    async def chat_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """AI Sohbet Handler - Komut olmayan mesajları yanıtlar"""
+        user_message = update.message.text
+        user = update.effective_user
+        
+        # Kullanıcıya "yazıyor" göster
+        await update.message.chat.send_action("typing")
+        
+        # AI'dan yanıt al
+        response = generate(user_message)
+        
+        # Yanıtı gönder
+        await update.message.reply_text(response)
+    
+    # Tüm metin mesajlarını yakala (komut değilse)
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat_handler))
 
     # Start the Bot
     logger.info("Boomer Brand bot başlatıldı!")
