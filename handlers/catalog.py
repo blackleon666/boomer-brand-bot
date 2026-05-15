@@ -1,7 +1,5 @@
 import os
 import sys
-
-# Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -18,9 +16,10 @@ async def catalog(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not products:
         await update.message.reply_text(
-            "📦 Ürün kataloğu şu anda boş.\n\n"
-            f"Lütfen daha sonra tekrar kontrol edin veya detaylı bilgi için WhatsApp'tan iletişime geçin:\n{WHATSAPP_LINK}\n\n"
-            "ℹ️ Not: Ürün kataloğu, Boomer Brand'ın Telegram ve Instagram hesaplarından alınan gerçek ürünlerle doldurulmalıdır."
+            "📦 *Boomer Brand Ürün Kataloğu*\n\n"
+            "Şu anda katalogda ürün bulunmuyor.\n\n"
+            f"Detaylı bilgi için WhatsApp'tan iletişime geçebilirsiniz:\n{WHATSAPP_LINK}",
+            parse_mode='Markdown'
         )
         return
 
@@ -29,7 +28,7 @@ async def catalog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for product in products:
         price_info = f" - {product.price_value} TL" if product.price_visible and product.price_value else " - Fiyat için WhatsApp"
         message += f"• {product.name}{price_info}\n"
-        keyboard.append([InlineKeyboardButton(f"{product.name} - Detay", callback_data=f"product_{product.id}")])
+        keyboard.append([InlineKeyboardButton(f"{product.name}", callback_data=f"product_{product.id}")])
 
     keyboard.append([InlineKeyboardButton("📱 WhatsApp ile İletişim", url=WHATSAPP_LINK)])
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -51,16 +50,14 @@ async def product_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     detail_message = f"🛍️ *{product.name}*\n\n"
-    detail_message += f"{product.description}\n\n"
+    detail_message += f"{product.description or 'Açıklama yok'}\n\n"
     if product.price_visible and product.price_value:
         detail_message += f"💰 Fiyat: {product.price_value} TL\n"
     else:
         detail_message += "💰 Fiyat: Detay için WhatsApp\n"
-    detail_message += f"\n📍 Kaynak: {product.source.capitalize()} (Gönderi ID: {product.source_post_id})"
-
+    
     keyboard = [
-        [InlineKeyboardButton("🛒 Sipariş Ver", callback_data=f"order_{product.id}")],
-        [InlineKeyboardButton("📱 WhatsApp ile İletişim", url=WHATSAPP_LINK)]
+        [InlineKeyboardButton("📱 Sipariş için WhatsApp", url=WHATSAPP_LINK)]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.edit_message_text(detail_message, parse_mode='Markdown', reply_markup=reply_markup)

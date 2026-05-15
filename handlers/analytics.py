@@ -15,15 +15,21 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         order_count = db.query(Order).count()
         complaint_count = db.query(Complaint).count()
         product_count = db.query(Product).count()
+        
+        # Aktif kullanıcılar (son 24 saatte)
+        from datetime import datetime, timedelta
+        yesterday = datetime.now() - timedelta(days=1)
+        active_users = db.query(User).filter(User.last_interaction >= yesterday).count()
     finally:
         db.close()
 
-    message = (
+    await update.message.reply_text(
         f"📊 *Boomer Brand İstatistikleri*\n\n"
-        f"👥 Toplam Kullanıcı: *{user_count}*\n"
-        f"📦 Toplam Sipariş: *{order_count}*\n"
-        f"📝 Toplam Şikayet: *{complaint_count}*\n"
-        f"🛍️ Toplam Ürün: *{product_count}*\n\n"
-        f"Detaylı bilgi için WhatsApp'tan iletişime geçebilirsiniz:\n{WHATSAPP_LINK}"
+        f"👥 Toplam Kullanıcı: {user_count}\n"
+        f"⏰ Aktif Kullanıcılar: {active_users}\n"
+        f"📦 Toplam Sipariş: {order_count}\n"
+        f"📝 Toplam Şikayet: {complaint_count}\n"
+        f"🛍️ Toplam Ürün: {product_count}\n\n"
+        f"Detaylı bilgi: {WHATSAPP_LINK}",
+        parse_mode='Markdown'
     )
-    await update.message.reply_text(message, parse_mode='Markdown')
